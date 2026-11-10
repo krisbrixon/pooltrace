@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pool Tracker</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --card: #0f3460;
+  --accent: #e94560;
+  --accent-hover: #ff6b81;
+  --text: #eee;
+  --text-dim: #aab;
+  --success: #2ecc71;
+  --border: #2a3a5c;
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+header {
+  background: var(--surface);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--accent);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 { font-size: 1.3rem; letter-spacing: 1px; }
+
+#summary-link {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: .4rem .75rem;
+  font-size: .8rem;
+  border-radius: var(--radius);
+}
+
+.screen { display: none; padding: 1rem; max-width: 500px; margin: 0 auto; }
+.screen.active { display: block; }
+
+h2 { font-size: 1.1rem; margin-bottom: .75rem; color: var(--accent); }
+h3 { font-size: .95rem; margin: .75rem 0 .4rem; color: var(--text-dim); }
+
+label { display: block; font-size: .85rem; color: var(--text-dim); margin-bottom: .25rem; }
+
+input[type="text"], select, textarea {
+  width: 100%;
+  padding: .7rem .8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+}
+
+input[type="text"]:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea { resize: vertical; min-height: 60px; }
+
+button {
+  padding: .7rem 1.2rem;
+  border: none;
+  border-radius: var(--radius);
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+
+button:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  width: 100%;
+  margin-top: .5rem;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-secondary {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-small {
+  padding: .4rem .7rem;
+  font-size: .8rem;
+  width: auto;
+  margin: .2rem;
+}
+
+.btn-danger { background: #c0392b; color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+
+/* Player chips */
+.chip-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .45rem .75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: .9rem;
+}
+
+.chip.selected { border-color: var(--accent); background: rgba(233,69,96,.15); }
+
+.chip button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  padding: 0 .1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chip button:hover { color: var(--accent); }
+
+/* Team cards */
+.team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem;
+  margin-bottom: .6rem;
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .4rem;
+}
+
+.team-header span { font-weight: 600; }
+
+/* Shooting order */
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: .3rem;
+}
+
+.order-item span { flex: 1; }
+
+.order-btns button {
+  padding: .25rem .4rem;
+  font-size: .75rem;
+  min-width: 28px;
+}
+
+/* Last game summary */
+.last-game {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  padding: .6rem .75rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: 1rem;
+  font-size: .85rem;
+}
+
+.last-game strong { color: var(--accent); }
+
+/* Summary */
+.summary-game {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: .6rem .75rem;
+  margin-bottom: .4rem;
+  font-size: .9rem;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem;
+}
+
+.standings-table th, .standings-table td {
+  padding: .5rem .6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: .9rem;
+}
+
+.standings-table th { color: var(--text-dim); font-weight: 600; }
+
+/* Action bar */
+.action-bar {
+  display: flex;
+  gap: .5rem;
+  margin-top: 1rem;
+}
+
+.action-bar button { flex: 1; }
+
+/* Section divider */
+.section { margin-bottom: 1.25rem; }
+
+/* Empty state */
+.empty { text-align: center; color: var(--text-dim); padding: 1.5rem .5rem; font-size: .9rem; }
+
+/* Scrollable player list for team assignment */
+.assign-list { max-height: 200px; overflow-y: auto; margin-bottom: .5rem; }
+
+/* Ball assignment */
+.ball-group {
+  display: flex;
+  gap: .35rem;
+  margin-bottom: .4rem;
+}
+
+.ball-option {
+  flex: 1;
+  text-align: center;
+  padding: .45rem .3rem;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: .8rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  user-select: none;
+}
+
+.ball-option:hover { border-color: var(--text-dim); }
+
+.ball-option.selected {
+  border-color: var(--accent);
+  background: rgba(233,69,96,.15);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Responsive tweaks */
+@media (min-width: 600px) {
+  body { padding-top: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header><h1>🎱 Pool Tracker</h1><button id="summary-link" onclick="showSummary()">📊 Summary</button></header>
+
+<!-- SCREEN: Players -->
+<div id="screen-players" class="screen active">
+  <div class="section">
+    <h2>Add Player</h2>
+    <div style="display:flex;gap:.5rem;">
+      <input type="text" id="new-player-name" placeholder="Player name" enterkeyhint="done">
+      <button class="btn-secondary" onclick="addPlayer()" style="width:auto;white-space:nowrap;">Add</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Saved Players</h2>
+    <div id="saved-players-list"></div>
+  </div>
+
+  <div class="section">
+    <h2>Select Today's Players</h2>
+    <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.5rem;">Tap to select/deselect who is playing today.</p>
+    <div id="select-players-list"></div>
+  </div>
+
+  <button class="btn-primary" onclick="goToTeams()">Continue →</button>
+</div>
+
+<!-- SCREEN: Teams -->
+<div id="screen-teams" class="screen">
+  <h2>Create Teams</h2>
+  <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.75rem;">Assign selected players to teams. Each player must be on exactly one team.</p>
+
+  <div id="teams-container"></div>
+
+  <button class="btn-secondary btn-small" onclick="addTeam()">+ Add Team</button>
+  <br><br>
+
+  <div id="sitting-out-info" class="empty" style="display:none;"></div>
+
+  <div class="action-bar">
+    <button class="btn-secondary" onclick="showScreen('screen-players')">← Back</button>
+    <button class="btn-primary" onclick="goToGameSetup()">Continue →</button>
+  </div>
+</div>
+
+<!-- SCREEN: Game Setup -->
+<div id="screen-game-setup" class="screen">
+  <h2>Game Setup</h2>
+
+  <div class="section">
+    <label for="game-type">Game Type</label>
+    <select id="game-type">
+      <option value="8 Ball">8 Ball</option>
+      <option value="9 Ball">9 Ball</option>
+      <option value="10 Ball">10 Ball</option>
+      <option value="Straight Pool">Straight Pool</option>
+      <option value="Cut Throat">Cut Throat</option>
+      <option value="Cut Throat Elimination">Cut Throat Elimination</option>
+      <option value="One Pocket">One Pocket</option>
+      <option value="__custom__">Other...</option>
+    </select>
+    <input type="text" id="game-type-custom" placeholder="Enter game name..." style="display:none;margin-top:.4rem;">
+  </div>
+
+  <div class="section">
+    <h3>Ball Assignment</h3>
+    <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.4rem;">Tap to assign balls per team.</p>
+    <div id="ball-assignment-list"></div>
+  </div>
+
+  <div class="section">
+    <h3>Shooting Order</h3>
+    <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.25rem;">First shooter breaks. Tap ↑↓ to reorder.</p>
+    <div id="breaker-label" style="font-size:.85rem;margin-bottom:.4rem;color:var(--accent);"></div>
+    <div id="shooting-order-list"></div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn-secondary" onclick="showScreen('screen-teams')">← Back</button>
+    <button class="btn-primary" onclick="startGame()">Start Game</button>
+  </div>
+</div>
+
+<!-- SCREEN: Playing -->
+<div id="screen-playing" class="screen">
+  <h2 id="playing-title">Game in Progress</h2>
+
+  <div id="last-game-summary"></div>
+
+  <div class="section">
+    <h3>Shooting Order</h3>
+    <div id="current-shooting-order"></div>
+  </div>
+
+  <div class="section">
+    <label for="winner-select">Winner</label>
+    <select id="winner-select"></select>
+  </div>
+
+  <div class="section">
+    <label for="game-notes">Notes (optional)</label>
+    <textarea id="game-notes" placeholder="e.g. great break shot, safety battle..."></textarea>
+  </div>
+
+  <button class="btn-primary" onclick="finishGame()">Record Game</button>
+</div>
+
+<!-- SCREEN: Summary -->
+<div id="screen-summary" class="screen">
+  <h2>Session Summary</h2>
+
+  <div id="summary-games"></div>
+
+  <h3 style="margin-top:1rem;">Session Standings</h3>
+  <table class="standings-table">
+    <thead><tr><th>Player</th><th>W</th><th>L</th></tr></thead>
+    <tbody id="summary-standings"></tbody>
+  </table>
+
+  <div style="margin-top:1.25rem;">
+    <h3>All-Time Standings</h3>
+    <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.4rem;">Accumulated across all sessions.</p>
+    <table class="standings-table">
+      <thead><tr><th>Player</th><th>W</th><th>L</th></tr></thead>
+      <tbody id="alltime-standings"></tbody>
+    </table>
+    <button class="btn-small btn-danger" onclick="clearAllTimeStandings()">Clear All-Time Standings</button>
+  </div>
+
+  <div style="margin-top:1rem;">
+    <button class="btn-secondary" onclick="copySummary()" id="copy-btn">📋 Copy Summary</button>
+  </div>
+
+  <div class="action-bar" style="margin-top:.75rem;">
+    <button class="btn-secondary" onclick="continueSession()">← Continue Session</button>
+    <button class="btn-primary" onclick="resetSession()">New Session</button>
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────
+let state = {
+  players: [],          // all saved player names (localStorage)
+  selectedPlayers: [],  // playing today
+  teams: [],            // [{name:"Team 1", players:[...]}]
+  gameType: '8 Ball',
+  breaker: '',
+  shootingOrder: [],    // array of player names in order
+  ballAssignments: {},  // { teamIdx: "Solid" | "Stripe" | ... }
+  games: [],            // completed games this session
+  lastGame: null,       // most recent completed game
+  gameInProgress: false, // true when a game is started but not yet recorded
+};
+
+// ─── Persistence ────────────────────────────────────────
+const SESSION_KEY = 'pool_session';
+const ALLTIME_KEY = 'pool_alltime';
+
+// ─── All-Time Standings ────────────────────────────────
+function loadAllTimeStandings() {
+  try {
+    return JSON.parse(localStorage.getItem(ALLTIME_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveAllTimeStandings(alltime) {
+  localStorage.setItem(ALLTIME_KEY, JSON.stringify(alltime));
+}
+
+function clearAllTimeStandings() {
+  if (confirm('Clear all-time standings? This cannot be undone.')) {
+    localStorage.removeItem(ALLTIME_KEY);
+    showSummary(); // re-render to reflect cleared data
+  }
+}
+
+function updateAllTimeStandings(winningPlayers, participatingPlayers) {
+  const alltime = loadAllTimeStandings();
+  // Ensure every participant has an entry
+  participatingPlayers.forEach(p => {
+    if (!alltime[p]) alltime[p] = { w: 0, l: 0 };
+  });
+  // Record results
+  winningPlayers.forEach(p => { if (alltime[p]) alltime[p].w++; });
+  const winnersSet = new Set(winningPlayers);
+  participatingPlayers.forEach(p => {
+    if (!winnersSet.has(p) && alltime[p]) alltime[p].l++;
+  });
+  saveAllTimeStandings(alltime);
+}
+
+function loadPlayers() {
+  try {
+    state.players = JSON.parse(localStorage.getItem('pool_players') || '[]');
+  } catch { state.players = []; }
+}
+
+function savePlayers() {
+  localStorage.setItem('pool_players', JSON.stringify(state.players));
+}
+
+function hasSavedSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    return s && (s.games && s.games.length > 0 || s.gameInProgress);
+  } catch { return false; }
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    state.selectedPlayers = s.selectedPlayers || [];
+    state.teams = s.teams || [];
+    state.gameType = s.gameType || '8 Ball';
+    state.breaker = s.breaker || '';
+    state.shootingOrder = s.shootingOrder || [];
+    state.ballAssignments = s.ballAssignments || {};
+    state.games = s.games || [];
+    state.lastGame = s.lastGame || null;
+    state.gameInProgress = !!s.gameInProgress;
+    state._activeBallAssignments = s._activeBallAssignments || {};
+  } catch { /* ignore corrupt data */ }
+}
+
+function saveSession() {
+  const session = {
+    selectedPlayers: state.selectedPlayers,
+    teams: state.teams,
+    gameType: state.gameType,
+    breaker: state.breaker,
+    shootingOrder: state.shootingOrder,
+    ballAssignments: state.ballAssignments,
+    games: state.games,
+    lastGame: state.lastGame,
+    gameInProgress: state.gameInProgress,
+    _activeBallAssignments: state._activeBallAssignments || {},
+  };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+// ─── Screen Navigation ──────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── Players Screen ─────────────────────────────────────
+function renderPlayers() {
+  const savedEl = document.getElementById('saved-players-list');
+  const selectEl = document.getElementById('select-players-list');
+
+  if (state.players.length === 0) {
+    savedEl.innerHTML = '<div class="empty">No players yet. Add some above!</div>';
+    selectEl.innerHTML = '';
+    return;
+  }
+
+  savedEl.innerHTML = state.players.map((name, i) => `
+    <span class="chip">
+      ${esc(name)}
+      <button onclick="removePlayer(${i})" title="Remove">×</button>
+    </span>
+  `).join('');
+
+  selectEl.innerHTML = state.players.map((name, i) => {
+    const sel = state.selectedPlayers.includes(name);
+    return `<span class="chip ${sel ? 'selected' : ''}" onclick="togglePlayer('${escAttr(name)}')">
+      ${sel ? '●' : '○'} ${esc(name)}
+    </span>`;
+  }).join('');
+}
+
+function addPlayer() {
+  const input = document.getElementById('new-player-name');
+  const name = input.value.trim();
+  if (!name) return;
+  if (state.players.includes(name)) { alert('Player already exists.'); return; }
+  state.players.push(name);
+  savePlayers();
+  input.value = '';
+  renderPlayers();
+}
+
+function removePlayer(i) {
+  const name = state.players[i];
+  state.players.splice(i, 1);
+  state.selectedPlayers = state.selectedPlayers.filter(p => p !== name);
+  savePlayers();
+  renderPlayers();
+}
+
+function togglePlayer(name) {
+  const idx = state.selectedPlayers.indexOf(name);
+  if (idx >= 0) state.selectedPlayers.splice(idx, 1);
+  else state.selectedPlayers.push(name);
+  saveSession();
+  renderPlayers();
+}
+
+// ─── Teams Screen ───────────────────────────────────────
+function goToTeams() {
+  if (state.selectedPlayers.length === 0) { alert('Select at least one player.'); return; }
+  showScreen('screen-teams');
+  // Initialize teams: start with 2 empty teams
+  state.teams = [{ name: 'Team 1', players: [] }, { name: 'Team 2', players: [] }];
+  renderTeams();
+}
+
+function addTeam() {
+  const n = state.teams.length + 1;
+  state.teams.push({ name: `Team ${n}`, players: [] });
+  renderTeams();
+}
+
+function removeTeam(idx) {
+  // Unassign players from removed team
+  state.teams[idx].players.forEach(p => { /* they become unassigned */ });
+  state.teams.splice(idx, 1);
+  renderTeams();
+}
+
+function renderTeams() {
+  const container = document.getElementById('teams-container');
+  const availablePlayers = state.selectedPlayers.filter(p => !isAssigned(p));
+
+  let html = '';
+  state.teams.forEach((team, ti) => {
+    html += `<div class="team-card">
+      <div class="team-header">
+        <span>${esc(team.name)}</span>
+        ${state.teams.length > 2 ? `<button class="btn-small btn-danger" onclick="removeTeam(${ti})">Remove</button>` : ''}
+      </div>
+      <div class="chip-list">`;
+
+    team.players.forEach(p => {
+      html += `<span class="chip selected">${esc(p)} <button onclick="unassignPlayer(${ti},'${escAttr(p)}')">×</button></span>`;
+    });
+
+    html += `</div><select onchange="assignToTeam(this, ${ti})" style="margin-top:.3rem;">`;
+    html += `<option value="">+ Add player...</option>`;
+    availablePlayers.forEach(p => {
+      html += `<option value="${escAttr(p)}">${esc(p)}</option>`;
+    });
+    // Also show players already on other teams (to move them)
+    state.teams.filter((_, j) => j !== ti).forEach(otherTeam => {
+      otherTeam.players.forEach(p => {
+        html += `<option value="${escAttr(p)}">↔ ${esc(p)}</option>`;
+      });
+    });
+
+    html += `</select></div>`;
+  });
+
+  // Show sitting-out info
+  const infoEl = document.getElementById('sitting-out-info');
+  if (availablePlayers.length > 0) {
+    infoEl.style.display = 'block';
+    infoEl.textContent = `Sitting out: ${availablePlayers.map(esc).join(', ')}`;
+  } else {
+    infoEl.style.display = 'none';
+  }
+
+  container.innerHTML = html;
+}
+
+function isAssigned(playerName) {
+  return state.teams.some(t => t.players.includes(playerName));
+}
+
+function assignToTeam(selectEl, teamIdx) {
+  const val = selectEl.value;
+  if (!val) return;
+  // Remove from any existing team first
+  state.teams.forEach(t => { t.players = t.players.filter(p => p !== val); });
+  state.teams[teamIdx].players.push(val);
+  saveSession();
+  renderTeams();
+}
+
+function unassignPlayer(teamIdx, playerName) {
+  state.teams[teamIdx].players = state.teams[teamIdx].players.filter(p => p !== playerName);
+  saveSession();
+  renderTeams();
+}
+
+// ─── Game Setup Screen ──────────────────────────────────
+function goToGameSetup() {
+  // Check that at least one player is on a team
+  const totalAssigned = state.teams.reduce((sum, t) => sum + t.players.length, 0);
+  if (totalAssigned === 0) { alert('Please assign at least one player to a team.'); return; }
+
+  showScreen('screen-game-setup');
+
+  // Shooting order is always built from current team assignments
+  state.shootingOrder = [];
+  state.teams.forEach(t => { t.players.forEach(p => state.shootingOrder.push(p)); });
+
+  // Breaker is always the first person in shooting order (set on start)
+
+  // Ball assignments start fresh each game
+  state.ballAssignments = {};
+
+  renderShootingOrder();
+  renderBreakerLabel();
+  renderBallAssignments();
+
+  // Game type change handler for custom input
+  const gameTypeEl = document.getElementById('game-type');
+  const customEl = document.getElementById('game-type-custom');
+  if (state.lastGame) {
+    gameTypeEl.value = state.lastGame.gameType === '__custom__' ? '__custom__' : state.lastGame.gameType;
+    if (state.lastGame.gameType === '__custom__') {
+      customEl.style.display = 'block';
+      customEl.value = state.lastGame.customGameName || '';
+    } else {
+      customEl.style.display = 'none';
+    }
+  }
+
+  gameTypeEl.onchange = () => {
+    customEl.style.display = gameTypeEl.value === '__custom__' ? 'block' : 'none';
+  };
+}
+
+function renderShootingOrder() {
+  const el = document.getElementById('shooting-order-list');
+  el.innerHTML = state.shootingOrder.map((name, i) => `
+    <div class="order-item" style="${i === 0 ? 'border-left:3px solid var(--accent);' : ''}">
+      <span>${i + 1}. ${esc(name)}${i === 0 ? ' (breaker)' : ''}</span>
+      <span class="order-btns">
+        ${i > 0 ? `<button class="btn-small btn-secondary" onclick="moveShooter(${i},-1)">↑</button>` : ''}
+        ${i < state.shootingOrder.length - 1 ? `<button class="btn-small btn-secondary" onclick="moveShooter(${i},1)">↓</button>` : ''}
+      </span>
+    </div>
+  `).join('');
+}
+
+function moveShooter(idx, dir) {
+  const newIdx = idx + dir;
+  [state.shootingOrder[idx], state.shootingOrder[newIdx]] = [state.shootingOrder[newIdx], state.shootingOrder[idx]];
+  renderShootingOrder();
+}
+
+// Show current breaker (first in shooting order) as a label
+function renderBreakerLabel() {
+  const el = document.getElementById('breaker-label');
+  if (el && state.shootingOrder.length > 0) {
+    el.textContent = `Breaker: ${state.shootingOrder[0]}`;
+  }
+}
+
+// ─── Ball Assignment ────────────────────────────────────
+const BALL_OPTIONS = ['Low', 'Middle', 'High', 'Solid', 'Stripe'];
+
+function renderBallAssignments() {
+  const el = document.getElementById('ball-assignment-list');
+  let html = '';
+  state.teams.forEach((team, ti) => {
+    const current = state.ballAssignments[ti] || '';
+    html += `<div class="team-card" style="padding:.5rem .75rem;margin-bottom:.4rem;">
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:.35rem;">${esc(team.name)} (${team.players.map(esc).join(', ')})</div>
+      <div class="ball-group">`;
+    BALL_OPTIONS.forEach(opt => {
+      html += `<div class="ball-option ${current === opt ? 'selected' : ''}" onclick="setBall(${ti},'${opt}')">${opt}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  el.innerHTML = html;
+}
+
+function setBall(teamIdx, ballType) {
+  if (state.ballAssignments[teamIdx] === ballType) {
+    delete state.ballAssignments[teamIdx]; // toggle off
+  } else {
+    state.ballAssignments[teamIdx] = ballType;
+  }
+  renderBallAssignments();
+}
+
+// ─── Start Game ─────────────────────────────────────────
+function startGame() {
+  const gameTypeEl = document.getElementById('game-type');
+  const customEl = document.getElementById('game-type-custom');
+  let gameType = gameTypeEl.value;
+  let customName = '';
+  if (gameType === '__custom__') {
+    customName = customEl.value.trim();
+    if (!customName) { alert('Please enter a game name.'); return; }
+    gameType = customName;
+  }
+
+  state.gameType = gameType;
+  state.breaker = state.shootingOrder[0] || '';
+  // Capture ball assignments at start time
+  state._activeBallAssignments = { ...state.ballAssignments };
+  state.gameInProgress = true;
+  saveSession();
+
+  showScreen('screen-playing');
+  document.getElementById('playing-title').textContent = `${gameType} — Game ${state.games.length + 1}`;
+
+  // Winner dropdown: teams as options
+  const winnerEl = document.getElementById('winner-select');
+  winnerEl.innerHTML = state.teams.map((t, i) => {
+    const members = t.players.join(', ');
+    return `<option value="${i}">${esc(t.name)} (${members})</option>`;
+  }).join('');
+
+  // Notes
+  document.getElementById('game-notes').value = '';
+
+  // Last game summary
+  renderLastGameSummary();
+
+  // Current shooting order reference
+  renderCurrentShootingOrder();
+}
+
+function renderCurrentShootingOrder() {
+  const el = document.getElementById('current-shooting-order');
+  el.innerHTML = state.shootingOrder.map((name, i) => {
+    const isBreaker = name === state.breaker;
+    return `<div class="order-item" style="${isBreaker ? 'border-left:3px solid var(--accent);' : ''}">
+      <span>${i + 1}. ${esc(name)}${isBreaker ? ' (breaker)' : ''}</span>
+    </div>`;
+  }).join('');
+
+  // Show ball assignments on the playing screen
+  const balls = state._activeBallAssignments || {};
+  const hasBalls = Object.keys(balls).length > 0;
+  if (hasBalls) {
+    let ballHtml = '<div style="margin-top:.5rem;">';
+    state.teams.forEach((team, ti) => {
+      if (balls[ti]) {
+        ballHtml += `<div class="order-item" style="font-size:.85rem;">
+          <span>${esc(team.name)} (${team.players.map(esc).join(', ')}): <strong>${esc(balls[ti])}</strong></span>
+        </div>`;
+      }
+    });
+    ballHtml += '</div>';
+    el.innerHTML += ballHtml;
+  }
+}
+
+function renderLastGameSummary() {
+  const el = document.getElementById('last-game-summary');
+  if (!state.lastGame) {
+    el.innerHTML = '';
+    return;
+  }
+  const lg = state.lastGame;
+  const winnerTeamName = lg.winningTeam || 'Unknown';
+  let html = `<div class="last-game">
+    <strong>Last game:</strong> ${esc(lg.gameType)} — Won by <strong>${esc(winnerTeamName)}</strong><br>
+    Breaker: ${esc(lg.breaker)} | Order: ${lg.shootingOrder.join(' → ')}`;
+  if (lg.ballAssignments && Object.keys(lg.ballAssignments).length > 0) {
+    const ballParts = [];
+    state.teams.forEach((team, i) => {
+      if (lg.ballAssignments[i]) ballParts.push(`${esc(team.name)} (${team.players.map(esc).join(', ')}): ${esc(lg.ballAssignments[i])}`);
+    });
+    if (ballParts.length > 0) html += `<br>Balls: ${ballParts.join(', ')}`;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// ─── Finish Game ────────────────────────────────────────
+function finishGame() {
+  const winnerIdx = parseInt(document.getElementById('winner-select').value);
+  if (isNaN(winnerIdx)) return;
+
+  const winningTeam = state.teams[winnerIdx];
+  // All players actually on a team for this game (excludes sitting out)
+  const participatingPlayers = [];
+  state.teams.forEach(t => { t.players.forEach(p => participatingPlayers.push(p)); });
+
+  const gameRecord = {
+    gameType: document.getElementById('game-type').value === '__custom__'
+      ? document.getElementById('game-type-custom').value.trim()
+      : document.getElementById('game-type').value,
+    customGameName: document.getElementById('game-type').value === '__custom__'
+      ? document.getElementById('game-type-custom').value.trim()
+      : null,
+    winningTeamIdx: winnerIdx,
+    winningTeam: state.teams[winnerIdx].name,
+    winningPlayers: [...winningTeam.players],
+    losingTeams: state.teams.filter((_, i) => i !== winnerIdx).map(t => t.name),
+    participatingPlayers: participatingPlayers,
+    breaker: state.breaker,
+    shootingOrder: [...state.shootingOrder],
+    ballAssignments: { ...state._activeBallAssignments },
+    notes: document.getElementById('game-notes').value.trim(),
+  };
+
+  state.games.push(gameRecord);
+  state.lastGame = gameRecord;
+  state.gameInProgress = false;
+  saveSession();
+
+  // Update all-time standings for participating players
+  updateAllTimeStandings(gameRecord.winningPlayers, gameRecord.participatingPlayers);
+
+  // Ask to continue or view summary
+  if (confirm('Game recorded! Start another game?')) {
+    startNewGame();
+  } else {
+    showSummary();
+  }
+}
+
+function startNewGame() {
+  // Keep teams, shooting order, etc. from last game but allow changes
+  goToGameSetup();
+}
+
+function continueSession() {
+  if (state.gameInProgress) {
+    showScreen('screen-playing');
+    return;
+  }
+  if (state.games.length === 0) {
+    showScreen('screen-players');
+    return;
+  }
+  goToGameSetup();
+}
+
+// ─── Summary Screen ─────────────────────────────────────
+function showSummary() {
+  showScreen('screen-summary');
+
+  const gamesEl = document.getElementById('summary-games');
+  if (state.games.length === 0) {
+    gamesEl.innerHTML = '<div class="empty">No games played yet.</div>';
+  } else {
+    gamesEl.innerHTML = state.games.map((g, i) => `
+      <div class="summary-game">
+        <strong>${esc(g.gameType)}</strong>: ${esc(g.winningTeam)} (${g.winningPlayers.map(esc).join(', ')})
+        ${g.notes ? `<br><span style="color:var(--text-dim);font-size:.8rem;">${esc(g.notes)}</span>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // Standings — only count players who participated in each game
+  const allParticipants = new Set();
+  state.games.forEach(g => { (g.participatingPlayers || []).forEach(p => allParticipants.add(p)); });
+  const standings = {};
+  allParticipants.forEach(p => { standings[p] = { w: 0, l: 0 }; });
+  state.games.forEach(g => {
+    g.winningPlayers.forEach(p => { if (standings[p]) standings[p].w++; });
+    const winnersSet = new Set(g.winningPlayers);
+    (g.participatingPlayers || []).forEach(p => {
+      if (!winnersSet.has(p) && standings[p]) standings[p].l++;
+    });
+  });
+
+  const sorted = Object.entries(standings).sort((a, b) => (b[1].w - a[1].w) || (a[1].l - b[1].l));
+  document.getElementById('summary-standings').innerHTML = sorted.map(([name, rec]) => `
+    <tr><td>${esc(name)}</td><td>${rec.w}</td><td>${rec.l}</td></tr>
+  `).join('');
+
+  // All-time standings
+  const alltime = loadAllTimeStandings();
+  const alltimeSorted = Object.entries(alltime).sort((a, b) => (b[1].w - a[1].w) || (a[1].l - b[1].l));
+  if (alltimeSorted.length === 0) {
+    document.getElementById('alltime-standings').innerHTML = '<tr><td colspan="3" class="empty">No all-time data yet. Play some games!</td></tr>';
+  } else {
+    document.getElementById('alltime-standings').innerHTML = alltimeSorted.map(([name, rec]) => `
+      <tr><td>${esc(name)}</td><td>${rec.w}</td><td>${rec.l}</td></tr>
+    `).join('');
+  }
+
+  // Reset copy button text
+  const copyBtn = document.getElementById('copy-btn');
+  copyBtn.textContent = '📋 Copy Summary';
+}
+
+function buildSummaryText() {
+  const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  let lines = [`Pool — ${date}`];
+
+  state.games.forEach(g => {
+    const winners = g.winningPlayers.map(esc).join(', ');
+    const losers = (g.participatingPlayers || []).filter(p => !g.winningPlayers.includes(p)).map(esc).join(', ');
+    lines.push(`${esc(g.gameType)}: ${winners} def. ${losers}`);
+  });
+
+  // Standings — only count players who participated in each game
+  const allParticipants = new Set();
+  state.games.forEach(g => { (g.participatingPlayers || []).forEach(p => allParticipants.add(p)); });
+  const standings = {};
+  allParticipants.forEach(p => { standings[p] = { w: 0, l: 0 }; });
+  state.games.forEach(g => {
+    g.winningPlayers.forEach(p => { if (standings[p]) standings[p].w++; });
+    const winnersSet = new Set(g.winningPlayers);
+    (g.participatingPlayers || []).forEach(p => {
+      if (!winnersSet.has(p) && standings[p]) standings[p].l++;
+    });
+  });
+
+  lines.push('');
+  lines.push(Object.entries(standings).map(([p, rec]) => `${esc(p)}: ${rec.w}-${rec.l}`).join(' | '));
+
+  return lines.join('\n');
+}
+
+function copySummary() {
+  const text = buildSummaryText();
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('copy-btn').textContent = '✅ Copied!';
+  }).catch(() => {
+    // Fallback for older browsers / non-HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('copy-btn').textContent = '✅ Copied!';
+  });
+}
+
+// ─── Reset Session ──────────────────────────────────────
+function resetSession() {
+  if (state.games.length > 0 && !confirm('Start a new session? Current game data will be cleared.')) return;
+  state.selectedPlayers = [];
+  state.teams = [];
+  state.gameType = '8 Ball';
+  state.breaker = '';
+  state.shootingOrder = [];
+  state.ballAssignments = {};
+  state.games = [];
+  state.lastGame = null;
+  state.gameInProgress = false;
+  state._activeBallAssignments = {};
+  clearSession();
+  showScreen('screen-players');
+  renderPlayers();
+}
+
+// ─── Helpers ────────────────────────────────────────────
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function escAttr(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// ─── Init ───────────────────────────────────────────────
+function init() {
+  loadPlayers();
+
+  if (hasSavedSession()) {
+    // Show a choice: continue or start new
+    const savedGames = JSON.parse(localStorage.getItem(SESSION_KEY));
+    const gameCount = savedGames ? savedGames.games.length : 0;
+    const inProgress = savedGames && savedGames.gameInProgress;
+    let msg = `You have an unsaved session with ${gameCount} game${gameCount !== 1 ? 's' : ''}`;
+    if (inProgress) msg += ' and a game in progress';
+    msg += '. Continue where you left off?';
+
+    if (confirm(msg)) {
+      loadSession();
+      renderPlayers();
+      // If a game was in progress, go straight to playing screen
+      if (state.gameInProgress) {
+        showScreen('screen-playing');
+        document.getElementById('playing-title').textContent = `${state.gameType} — Game ${state.games.length + 1}`;
+        const winnerEl = document.getElementById('winner-select');
+        winnerEl.innerHTML = state.teams.map((t, i) => {
+          const members = t.players.join(', ');
+          return `<option value="${i}">${esc(t.name)} (${members})</option>`;
+        }).join('');
+        renderLastGameSummary();
+        renderCurrentShootingOrder();
+      } else if (state.games.length > 0) {
+        // Go to game setup for next game
+        goToGameSetup();
+      }
+    }
+    // If they decline, fall through to fresh start below
+  }
+
+  renderPlayers();
+}
+
+init();
+
+// Enter key on player input
+document.getElementById('new-player-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPlayer();
+});
+</script>
+</body>
+</html>
